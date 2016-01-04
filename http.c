@@ -5,10 +5,10 @@ char* postDataToServer(const char *hostname, const char *url);
 int parseStandardResponse(char *content);
 int getElement(const char *content, char *tag, char *value);
 int parseUploadTestItemResultResponse(char *content);
-int parseUploadFinalTestResultResponse(char *content);
+int parseUploadFinalTestResultResponse(char *content, s_upload_final_test_response *response);
 int parseRoutingResponse(char *content, s_routing_respone_parameter_list *result);
 int parseStandardResponse(char *content);
-
+int UploadFinalTestResult(s_upload_final_test_result *result, s_upload_final_test_response *response);
 char* host_to_ip(const char *hostname)
 {
     struct hostent *host_entry;
@@ -205,7 +205,7 @@ int parseUploadTestItemResultResponse(char *content)
     return parseStandardResponse(content);
 }
 //5. Upload Final Test Result
-int UploadFinalTestResult(s_upload_final_test_result *result)
+int UploadFinalTestResult(s_upload_final_test_result *result, s_upload_final_test_response *response)
 {
     char url[BUFSIZ] = { 0 };
     char *content = NULL;
@@ -295,19 +295,23 @@ int UploadFinalTestResult(s_upload_final_test_result *result)
 
     content =  postDataToServer(IP_ADDRESS, url);
 
-    res = parseUploadFinalTestResultResponse(content);
+    res = parseUploadFinalTestResultResponse(content,response);
     if (NULL != content)
     {
         free(content);
     }
     return res;
 }
-int parseUploadFinalTestResultResponse(char *content){
-    if (NULL == content)
+int parseUploadFinalTestResultResponse(char *content, s_upload_final_test_response *response){
+    if (NULL == content || NULL == response)
     {
         return -1;
     }
-    return parseStandardResponse(content);
+    getElement(content,"cmd",response->cmd);
+    getElement(content,"wip_no",response->wip_no);
+    getElement(content,"sfc_result",response->sfc_result);
+    getElement(content,"sfc_error_msg",response->sfc_error_msg);
+    return 0;
 }
 //common function
 char* postDataToServer(const char *hostname, const char *url)

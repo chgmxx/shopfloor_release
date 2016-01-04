@@ -126,6 +126,12 @@ typedef struct{
     char item_symptom_code[MAX_STRLEN];
     char diag_version[MAX_STRLEN];
 }s_upload_final_test_result;
-
+//5.2.  Response Parameter List
+typedef struct{
+    char cmd[MAX_STRLEN];
+    char wip_no[MAX_STRLEN];
+    char sfc_result[MAX_STRLEN];
+    char sfc_error_msg[MAX_STRLEN];
+}s_upload_final_test_response;
 #endif
 
