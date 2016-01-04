@@ -10,7 +10,7 @@
 #include <fcntl.h>
 #include <winsock2.h>
 // TODO:
-#define SHOP_DEBUG
+//#define SHOP_DEBUG
 //
 #ifdef SHOP_DEBUG
 #define PORT 8080

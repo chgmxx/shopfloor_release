@@ -2,6 +2,13 @@
 #include "shopfloor.h"
 
 char* postDataToServer(const char *hostname, const char *url);
+int parseStandardResponse(char *content);
+int getElement(const char *content, char *tag, char *value);
+int parseUploadTestItemResultResponse(char *content);
+int parseUploadFinalTestResultResponse(char *content);
+int parseRoutingResponse(char *content, s_routing_respone_parameter_list *result);
+int parseStandardResponse(char *content);
+
 char* host_to_ip(const char *hostname)
 {
     struct hostent *host_entry;
@@ -73,10 +80,11 @@ char* http_header_strip(char *content)
 }
 
 //3. ROUTING CHECK
-int QueryRoutingParameterList()
+int QueryRoutingParameterList(s_routing_respone_parameter_list *result)
 {
     char url[BUFSIZ] = { 0 };
     char *content = NULL;
+    int res = 0;
     s_query_routing_parameter_list routing_para = { 0 };
 
 #ifdef SHOP_DEBUG
@@ -92,12 +100,44 @@ int QueryRoutingParameterList()
     sprintf(url, IP_CONNECT_STRING, IP_ADDRESS, routing_para.cmd, routing_para.wip_no, routing_para.station_type);
     content = postDataToServer(IP_ADDRESS, url);
 #endif
-    (void)parseRoutingResponse(content);
-    return EXIT_SUCCESS;
+    res = parseRoutingResponse(content,result);
+    return res;
 }
 //http://10.195.226.56/MLB/AddGK?cmd=QUERY_ROUTING&wip_no=BIR0000000000000&station_type=BB1
-int parseRoutingResponse(char *content)
+int parseRoutingResponse(char *content, s_routing_respone_parameter_list *result)
 {
+    if (NULL == content || NULL == result)
+    {
+        return -1;
+    }
+    getElement(content,"cmd",result->cmd);
+    getElement(content,"wip_no",result->wip_no);
+    getElement(content,"permission",result->permission);
+    getElement(content,"sfc_error_msg",result->sfc_error_msg);
+    getElement(content,"sw_version_check",result->sw_version_check);
+    getElement(content,"rf_band_id",result->rf_band_id);
+    getElement(content,"imei",result->imei);
+    getElement(content,"imei2",result->imei2);
+    getElement(content,"meid",result->meid);
+    getElement(content,"esn",result->esn);
+    getElement(content,"skuid",result->skuid);
+    getElement(content,"bt_addr",result->bt_addr);
+    getElement(content,"wifi_mac_addr",result->wifi_mac_addr);
+    getElement(content,"sim_lock_nkey",result->sim_lock_nkey);
+    getElement(content,"sim_lock_nskey",result->sim_lock_nskey);
+    getElement(content,"chip_version",result->chip_version);
+    getElement(content,"emmc_version",result->emmc_version);
+    getElement(content,"tp_version",result->tp_version);
+    getElement(content,"camera_version",result->camera_version);
+    getElement(content,"sim_category",result->sim_category);
+    getElement(content,"tool_version",result->tool_version);
+    getElement(content,"rdl_fw_path",result->rdl_fw_path);
+    getElement(content,"customer_product_id",result->customer_product_id);
+    getElement(content,"customer_product_id2",result->customer_product_id2);
+    getElement(content,"customer_sw_id",result->customer_sw_id);
+    getElement(content,"battery_pn",result->battery_pn);
+    getElement(content,"rdcode_with_skuid",result->rdcode_with_skuid);
+    return 0;
     //TODO: Parsing response
 }
 
@@ -110,6 +150,7 @@ int UploadTestItemResult(s_test_item_result_parameter_list *result)
     }
     char url[BUFSIZ] = { 0 };
     char *content = NULL;
+    int res = 0;
 //  http://10.195.226.56/MLB/AddGK?cmd=ADD_TEST_ITEM&wip_no=BIR0000000000000& test_station_name=MT
 //&station_code=MT001&test_item_name=BT_TX_BDR& test_spec_name=Power_Average_dBm
 //&test_value=16.2&upper_bound=13.0&low_bound=1.0&test_result=1&symptom_code=BT
@@ -151,26 +192,28 @@ int UploadTestItemResult(s_test_item_result_parameter_list *result)
 
     content =  postDataToServer(IP_ADDRESS, url);
     //TODO: Parsing response
-
+    res = parseUploadTestItemResultResponse(content);
     if (NULL != content)
     {
         free(content);
     }
+    return res;
 }
 
 int parseUploadTestItemResultResponse(char *content)
 {
-
+    return parseStandardResponse(content);
 }
 //5. Upload Final Test Result
 int UploadFinalTestResult(s_upload_final_test_result *result)
 {
+    char url[BUFSIZ] = { 0 };
+    char *content = NULL;
+    int res = 0;
     if (NULL == result)
     {
         return -1;
     }
-    char url[BUFSIZ] = { 0 };
-    char *content = NULL;
 //http://10.195.226.56/MLB/AddGK?cmd=ADD_TEST
 // &wip_no=BIR0000000000000&station_type=BB1&station_code=FXZZ_K06-2FT-01A_6_BB1
 // &test_machine_id=PC-0001
@@ -252,12 +295,19 @@ int UploadFinalTestResult(s_upload_final_test_result *result)
 
     content =  postDataToServer(IP_ADDRESS, url);
 
-    //TODO: Parsing response
-
+    res = parseUploadFinalTestResultResponse(content);
     if (NULL != content)
     {
         free(content);
     }
+    return res;
+}
+int parseUploadFinalTestResultResponse(char *content){
+    if (NULL == content)
+    {
+        return -1;
+    }
+    return parseStandardResponse(content);
 }
 //common function
 char* postDataToServer(const char *hostname, const char *url)
@@ -334,13 +384,34 @@ int getElement(const char *content, char *tag, char *value)
     return 0;
 }
 
+int parseStandardResponse(char *content)
+{
+    if (NULL == content)
+    {
+        return -1;
+    }
+    if (strstr(content, RESPONSE_OK) != NULL)
+    {
+        return 0;
+    } else if (strstr(content, RESPONSE_ERROR) != NULL)
+    {
+        return 1;
+    } else if (strstr(content, RESPONSE_FATAL_ERROR) != NULL)
+    {
+        return 2;
+    } else
+    {
+        return -1;
+    }
+}
 
 int main()
 {
 #ifdef SHOP_DEBUG
     int i = 0;
     printf("hello world\n");
-    QueryRoutingParameterList();
+    s_routing_respone_parameter_list routingParameter={0};
+    QueryRoutingParameterList(&routingParameter);
     scanf("%d", &i);
 #endif
     return 0;
