@@ -358,6 +358,7 @@ char* postDataToServer(const char *hostname, const char *url)
 }
 int getElement(const char *content, char *tag, char *value)
 {
+    #if 0
     char buf[100] = { 0 };
     char *subString = NULL;
     char tempChar = 0;
@@ -381,6 +382,41 @@ int getElement(const char *content, char *tag, char *value)
         i++;
     }
     strcpy(value, buf);
+    #else
+    char buf[1024] = { 0 };
+    char line[1024] = {0};
+    char *subString = NULL;
+    char tempChar = 0;
+    int strLen = 0;
+    int i = 0;
+    if (NULL == tag || NULL == content || NULL == value)
+    {
+        return -1;
+    }
+    strLen = strlen(content);
+	strncpy(buf,tag,sizeof(buf));
+	strcat(buf,"=");//contain "="
+    while (i < strLen)
+    {
+        int k = 0;
+        while (content[i]!='\n' && content[i]!='\r')
+        {
+            line[k++]=content[i++];
+        }
+        if (strlen(line)>0)
+        {
+            //avoid empty string such as sfc_error_msg=
+            if (strstr(line,buf) != 0 && (strlen(line)>strlen(buf)))
+            {
+                int  j = 0;
+                strcpy(value,line+strlen(buf));
+				return 0;
+            }
+        }
+        ++i;
+        memset(line,0,sizeof(line));
+    }
+    #endif
     return 0;
 }
 
